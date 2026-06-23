@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MalDetect — Malicious File Analyzer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <i class="ti ti-shield-check brand-icon"></i>
+        <span class="brand-name">MalDetect</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" onclick="showPage('analyzer', this)">
+            <i class="ti ti-scan"></i> Analyzer
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('history', this)">
+            <i class="ti ti-history"></i> History
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('reports', this)">
+            <i class="ti ti-chart-bar"></i> Reports
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('settings', this)">
+            <i class="ti ti-settings"></i> Settings
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="model-badge">
+            <i class="ti ti-cpu"></i>
+            <span>Random Forest · EMBER</span>
+        </div>
+        <div id="apiStatus" class="api-status">
+            <span class="status-dot"></span>
+            <span class="status-text">Connecting...</span>
+        </div>
+    </div>
+</div>
+
+<main class="main-content">
+
+    <!-- ── Analyzer Page ── -->
+    <div id="page-analyzer" class="page active">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title gradient-title">File Analyzer</h1>
+                <p class="page-subtitle">Upload PE files to detect malware using machine learning</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="btn-outline" onclick="clearAll()">
+                    <i class="ti ti-trash"></i> Clear all
+                </button>
+                <button class="btn-primary" id="analyzeBtn" onclick="analyzeFiles()" disabled>
+                    <i class="ti ti-player-play"></i> Run analysis
+                </button>
+            </div>
+        </div>
+        <div class="stats-row" id="statistics"></div>
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title"><i class="ti ti-upload"></i> Upload files</span>
+                    <span class="file-count" id="fileCount">0 files</span>
+                </div>
+                <div class="drop-zone" id="dropZone">
+                    <i class="ti ti-file-upload drop-icon"></i>
+                    <p class="drop-title">Drop files here</p>
+                    <p class="drop-sub">or click to browse — .exe, .dll, .sys supported</p>
+                    <input type="file" id="fileInput" multiple accept=".exe,.dll,.sys,.bin" hidden>
+                </div>
+                <div id="fileList" class="file-list"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title"><i class="ti ti-report-analytics"></i> Results</span>
+                    <span id="resultCount" class="file-count"></span>
+                </div>
+                <div id="results" class="results-area">
+                    <div class="empty-state">
+                        <i class="ti ti-shield-search empty-icon"></i>
+                        <p>No results yet</p>
+                        <small>Upload files and click Run analysis</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── History Page ── -->
+    <div id="page-history" class="page">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title gradient-title">Scan History</h1>
+                <p class="page-subtitle">All previous file analysis results</p>
+            </div>
+            <button class="btn-outline" onclick="clearHistory()">
+                <i class="ti ti-trash"></i> Clear history
+            </button>
+        </div>
+        <div id="historyList" class="history-list">
+            <div class="empty-state" style="padding: 60px 0;">
+                <i class="ti ti-history empty-icon"></i>
+                <p>No scan history yet</p>
+                <small>Run an analysis to see results here</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Reports Page ── -->
+    <div id="page-reports" class="page">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title gradient-title">Reports</h1>
+                <p class="page-subtitle">Generate PDF reports from your scan results</p>
+            </div>
+        </div>
+        <div class="panel" style="padding: 24px;">
+            <div id="reportPreview">
+                <div class="empty-state" style="padding: 60px 0;">
+                    <i class="ti ti-file-analytics empty-icon"></i>
+                    <p>No data to report yet</p>
+                    <small>Run a scan first, then come back to generate a report</small>
+                </div>
+            </div>
+            <div id="reportActions" style="display:none; margin-top: 20px;">
+                <button class="btn-primary" onclick="downloadPDF()">
+                    <i class="ti ti-file-download"></i> Download PDF Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Settings Page ── -->
+    <div id="page-settings" class="page">
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title gradient-title">Settings</h1>
+                <p class="page-subtitle">Configure your preferences</p>
+            </div>
+        </div>
+        <div class="panel settings-panel">
+            <div class="setting-row">
+                <div class="setting-info">
+                    <div class="setting-title"><i class="ti ti-moon"></i> Dark Mode</div>
+                    <div class="setting-desc">Switch between light and dark interface</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="themeToggle" checked onchange="toggleTheme()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+                <div class="setting-info">
+                    <div class="setting-title"><i class="ti ti-cpu"></i> Model Info</div>
+                    <div class="setting-desc">Random Forest trained on EMBER dataset · 2381 features · 100 trees</div>
+                </div>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+                <div class="setting-info">
+                    <div class="setting-title"><i class="ti ti-api"></i> API Endpoint</div>
+                    <div class="setting-desc">http://localhost:5000</div>
+                </div>
+                <span id="settingApiDot" class="status-dot" style="flex-shrink:0;"></span>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
